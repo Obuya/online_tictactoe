@@ -12,6 +12,7 @@ const Board = (props) => {
     ]
     const [board, setBoard] = useState(boardStart)
 
+    // update board and validate winner in the server- send back board from server
     const handleClick = (row, col) => {
     if (board[row][col] === '') {
         setBoard(
