@@ -1,20 +1,39 @@
 const express = require('express')
 const app = express()
 const http = require("http")
-const {
-    Server
-} = require('socket.io')
+const { Server } = require('socket.io')
 const cors = require("cors")
-const {
-    Socket
-} = require('engine.io')
-
+const { Socket } = require('engine.io')
 app.use(cors())
 
 
 const server = http.createServer(app)
-const users  = []
+const users = new Map()
 
+const boardDefault = [
+    ['', '', ''],
+    ['', '', ''],
+    ['', '', '']
+]
+
+const updateBoard = (row, col) => {
+    if (boardDefault[row][col] === '') {
+        
+        boardDefault[row][col] = 'x'
+    }
+
+}
+
+const clearBoard =  () => {
+
+    for(let i = 0; i < boardDefault; i++){
+        
+        for(let j = 0; j < boardDefault[0]; j++){
+
+            boardDefault[i][j] = ''
+        }
+    }
+}
 
 const io = new Server(server, {
 
@@ -28,63 +47,55 @@ const io = new Server(server, {
 
 io.on("connection", (socket) => {
 
-    socket.on("ping", () => socket.emit("connected"))
+    socket.on("ping", () => {
 
-    socket.on("join_room", (data) => {
+        socket.emit("connected")
 
-        // first checks if room exists
-        if (io.sockets.adapter.rooms.get(data.room)) {
+        console.log(`${socket.id} has connected`);
 
-            // checks number of connections to room must be less than 2
-            if (io.sockets.adapter.rooms.get(data.room).size < 2) {
-                socket.join(data.room)
-                console.log(
-                    `
-                    ${socket.id} joined ${data.room}. \n
-                    ${data.room} has ${io.sockets.adapter.rooms.get(data.room).size} clients. 
-                    
-                    `
-                )
-                console.log([...io.sockets.adapter.rooms.get(data.room)][0]);
-                io.to(data.room).emit("connected", {
-                    ...data,
-                    "connected":true,
-                    "opp" : {"name": socket.id, "status": true}
-                })
-            
-            //room is full dont connent another player
-            } else {
-                socket.emit("connected", {
-                    ...data,
-                    "connected": false,
-                    "opp" : {"name": socket.id, "status": true},
-                    "message" : "Game lobby full!!"
-                })
-            }
-
-        }
-        //creates a new room and adds a person
-        else {
-            socket.join(data.room)
-            console.log("new room size: ", io.sockets.adapter.rooms.get(data.room).size);
-            io.to(data.room).emit("connected", {
-                ...data,
-                "connected": true,
-                "opp" : {"name": socket.id, "status": false },
-                "message" : "Waiting for another opp..."
-            })   
-        }
-
-        socket.on('disconnect', (data) => {
-            io.to("room").emit("connected", {
-                "connected":true,
-                "opp" : {"name": socket.id, "status": false },
-                "message" : "opp left! Waiting for another opp..."
-            })
-
-            console.log(data)
-        })
     })
+
+    socket.on("move_made", (move) => {
+
+
+        updateBoard(move.row, move.col)
+
+        io.in("room").emit("update_board", [...boardDefault])
+
+
+    })
+
+    socket.on("create_room", (room) => {
+
+        if (users.has(room) === true) {
+
+            if (users.get(room).length >= 2) {
+
+
+            }
+            else {
+
+                socket.join(room)
+                clearBoard()
+                users.set(room, [...io.sockets.adapter.rooms.get(room)])
+                io.to(users.get(room)[0]).emit("opp_found", users.get(room)[1])
+                io.to(users.get(room)[1]).emit("opp_found", users.get(room)[0])
+                console.log(`${socket.id} has joined ${room}`);
+            }
+        }
+        else {
+            socket.join(room)
+            users.set(room, [...io.sockets.adapter.rooms.get(room)])
+            console.log(`${socket.id} has joined ${room}`)
+        }
+        // users.set(room, [...io.sockets.adapter.rooms.get(room)])
+        console.log(users)
+
+    })
+
+    socket.on("disconnect", (reason) => {
+        console.log(`${socket.id} has left`);
+    });
 
 })
 
