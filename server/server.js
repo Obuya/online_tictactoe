@@ -16,19 +16,19 @@ const boardDefault = [
     ['', '', '']
 ]
 
-const updateBoard = (row, col) => {
+const updateBoard = (row, col, client) => {
     if (boardDefault[row][col] === '') {
         
-        boardDefault[row][col] = 'x'
+        boardDefault[row][col] = client === users.get('room')[0] ? 'x' : 'o'
     }
 
 }
 
 const clearBoard =  () => {
 
-    for(let i = 0; i < boardDefault; i++){
+    for(let i = 0; i < boardDefault.length; i++){
         
-        for(let j = 0; j < boardDefault[0]; j++){
+        for(let j = 0; j < boardDefault[0].length; j++){
 
             boardDefault[i][j] = ''
         }
@@ -44,21 +44,20 @@ const io = new Server(server, {
     },
 })
 
+io.on("connect", (socket) => {
 
-io.on("connection", (socket) => {
+    io.to(socket.id).emit("join", users.has("room") ? users.get("room"): false )
 
-    socket.on("ping", () => {
 
-        socket.emit("connected")
-
-        console.log(`${socket.id} has connected`);
-
+    socket.on("connect", (data) => {
+        console.log(`${socket.id} has connected ${users.has("room")}`);
+        
     })
 
     socket.on("move_made", (move) => {
 
 
-        updateBoard(move.row, move.col)
+        updateBoard(move.row, move.col, socket.id)
 
         io.in("room").emit("update_board", [...boardDefault])
 
@@ -66,6 +65,8 @@ io.on("connection", (socket) => {
     })
 
     socket.on("create_room", (room) => {
+
+        clearBoard()
 
         if (users.has(room) === true) {
 
@@ -76,25 +77,31 @@ io.on("connection", (socket) => {
             else {
 
                 socket.join(room)
-                clearBoard()
+                console.log(users)
                 users.set(room, [...io.sockets.adapter.rooms.get(room)])
-                io.to(users.get(room)[0]).emit("opp_found", users.get(room)[1])
-                io.to(users.get(room)[1]).emit("opp_found", users.get(room)[0])
-                console.log(`${socket.id} has joined ${room}`);
+                io.in("room").emit("join_room", users.get("room") )
+                console.log(`${socket.id} has 1joined ${room}`);
             }
         }
         else {
             socket.join(room)
             users.set(room, [...io.sockets.adapter.rooms.get(room)])
-            console.log(`${socket.id} has joined ${room}`)
+            io.to("room").emit("host_room", users.get("room"))
+            io.emit("join", users.get("room"))
+            console.log(`${socket.id} 2has joined ${room}`)
         }
-        // users.set(room, [...io.sockets.adapter.rooms.get(room)])
-        console.log(users)
+        console.log(users,"sdsd")
 
     })
 
     socket.on("disconnect", (reason) => {
+        clearBoard()
+        io.emit("update_board", [...boardDefault])
         console.log(`${socket.id} has left`);
+        console.log(users, "users")
+        users.has("room") && users.get("room").includes(socket.id) && ( users.get("room").length > 1 ? users.set("room", [...io.sockets.adapter.rooms.get("room")]) : users.delete("room") )
+        console.log(users)
+        io.emit("exit", users.has("room") ? users.get("room") : false)
     });
 
 })

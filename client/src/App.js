@@ -4,47 +4,88 @@ import io from 'socket.io-client'
 
 import { useEffect, useState } from 'react'
 
-const socket  = io.connect("http://localhost:3001")
-
+const socket = io.connect("http://localhost:3001") 
 
 
 
 function App() {
-
-  const [renderBoard, setRenderBoard] = useState(false)
   const [name, setName] = useState("")
   const [oppName, setOppName] = useState("")
+  const [roomExists, setRoomExists] = useState(false)
+  const [players, setPlayers] = useState(0)
 
   useEffect(() => {
+    
 
-    socket.emit("ping" , () => console.log("this"))
 
-    socket.on("connected", (data) => {
-      setName( () => socket.id)
-    });
+      socket.on("join", (data) => {
 
-    socket.on("opp_found",(opp) => {
+        setName(() => socket.id)
+        if(data !== false){
+          setRoomExists(() => true)
+          console.log(data)
+        }
+        else{
+          setRoomExists(() => false)
+        }       
+      }) 
 
-      setOppName(() => opp)
-      console.log(opp);
-    } )
+      socket.on("exit", (data) => {
+
+        if(data !== false){
+          setRoomExists(() => false)
+          setPlayers( () => data.length)
+        }
+        else{
+          setRoomExists(() => false)
+          setPlayers( () => 0)
+        }      
+
+      })
+
+    socket.on("host_room", (data) => {
+
+      setPlayers( () => data.length)
+      // console.log("player count is:", players)
+       name === data[0] ? setOppName( () => data[1]) : setOppName( () => data[0])
+
+       console.log(data);
+    })
+
+    socket.on("join_room", (data) => {
+
+      setPlayers( () => data.length)
+      name === data[0] ? setOppName( () => data[1]) : setOppName( () => data[0])
+    })
 
 
   }, [socket])
 
+
+
 const joinRoom = () => {
     socket.emit("create_room", "room")
+    console.log(players);
 }
 
 
   return (
     <div className="App">
       <h2 className="title">Tic Tac Toe</h2>
-      <h4>i am: {name}</h4>
-      {oppName !='' ? <> <Board socket = {socket}/> <h4>playing against: {oppName}</h4></>
-        :<button onClick={joinRoom}>Start a Game</button> }
+      <h4 className='player'>i am: {name}</h4>
+      {
+        //we have an oppName  and no oppleft (so render the board)
+      (players === 2) ? 
+      <>
+      <Board socket = {socket}/> 
+      <h4 className='opp'>playing against: {oppName}</h4>
+      </>
+      // we had an opp but they left 
+        : players === 1 ? <h4>waiting for opp....</h4> : <button onClick={joinRoom}>{roomExists ? "Join" : "Start"} Game</button>
+      
+      }
     </div>
-  );
+  )
 }
 
 export default App;

@@ -14,7 +14,12 @@ const Board = (props) => {
 
     useEffect(() => {
 
-        props.socket.on("update_board", (board) => setBoard(() => board))
+        props.socket.on("update_board", (board) => {
+            
+            setBoard(() => [...board])
+        
+        
+        })
 
 
     }, [props.socket])
