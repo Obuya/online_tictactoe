@@ -7,7 +7,7 @@ import {
   useState
 } from 'react'
 
-const socket = io.connect("obuyatictactoe.herokuapp.com")
+const socket = io.connect("ws://obuyatictactoe.herokuapp.com")
 
 
 
@@ -88,7 +88,7 @@ function App() {
 
   return (
     <div className="App">
-      <h2 className="title">Tic Tac Toe</h2>
+      <h2 className="title">Tic Tac1 Toe</h2>
       <h4 className='player'>i am: {name}</h4>
       {
         // render game board only when there are 2 players connected
