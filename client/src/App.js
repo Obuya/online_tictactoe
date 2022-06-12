@@ -7,7 +7,11 @@ import {
   useState
 } from 'react'
 
+<<<<<<< HEAD
 const socket = io.connect("obuyatictactoe.herokuapp.com")
+=======
+const socket = io.connect("http://obuyatictactoe.herokuapp.com/")
+>>>>>>> master
 
 
 
