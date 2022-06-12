@@ -151,4 +151,4 @@ io.on("connect", (socket) => {
 
 
 
-server.listen(3001, () => console.log("server is running! http://localhost:3001"))
+server.listen(process.env.PORT || 3001, () => console.log("server is running! http://localhost:3001"))
