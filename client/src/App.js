@@ -7,7 +7,7 @@ import {
   useState
 } from 'react'
 
-const socket = io.connect("ws://obuyatictactoe.herokuapp.com")
+const socket = io.connect("https://obuyatictactoe.herokuapp.com")
 
 
 
