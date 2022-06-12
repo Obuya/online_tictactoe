@@ -1,14 +1,21 @@
 const express = require('express')
 const app = express()
 const http = require("http")
-const { Server } = require('socket.io')
+const {
+    Server
+} = require('socket.io')
 const cors = require("cors")
-const { Socket } = require('engine.io')
+const {
+    Socket
+} = require('engine.io')
 app.use(cors())
 
 
+
 const server = http.createServer(app)
-const users = new Map()
+const rooms = new Map()
+let turn = null
+let winner
 
 const boardDefault = [
     ['', '', ''],
@@ -16,19 +23,50 @@ const boardDefault = [
     ['', '', '']
 ]
 
+const setupGame = () => {
+
+    turn = rooms.get("room")[0]
+
+}
+
+const checkWin = (client) => {
+    winner =  //check first col 
+    (boardDefault[0][0] !== '' && boardDefault[0][0] === boardDefault[0][1] && boardDefault[0][1] == boardDefault[0][2]) ? client :
+    //check fist row
+    (boardDefault[0][0] !== '' && boardDefault[0][0] === boardDefault[1][0] && boardDefault[1][0] === boardDefault[2][0]) ? client : 
+    // check diagonal left to right
+    (boardDefault[0][0] !== '' && boardDefault[0][0] === boardDefault[1][1] && boardDefault[1][1] === boardDefault[2][2]) ? client :
+    // check diagonal right to left
+    (boardDefault[0][2] !== '' && boardDefault[0][2] === boardDefault[1][1] && boardDefault[1][1] === boardDefault[2][0]) ? client :
+    // check second col
+    (boardDefault[0][1] !== '' && boardDefault[0][1] === boardDefault[1][1] && boardDefault[1][1] === boardDefault[2][1]) ? client  :
+    // check second row
+    (boardDefault[1][0] !== '' && boardDefault[1][0] === boardDefault[1][1] && boardDefault[1][1] === boardDefault[1][2]) ? client :
+    //check third col
+    (boardDefault[0][2] !== '' && boardDefault[0][2] === boardDefault[1][2] && boardDefault[1][2] === boardDefault[2][2]) ? client :
+    // check third row
+    (boardDefault[2][0] !== '' && boardDefault[2][0] === boardDefault[2][1] && boardDefault[2][1] === boardDefault[2][2]) ? client : false
+
+console.log(winner);
+
+
+}
+
 const updateBoard = (row, col, client) => {
-    if (boardDefault[row][col] === '') {
-        
-        boardDefault[row][col] = client === users.get('room')[0] ? 'x' : 'o'
+    if (boardDefault[row][col] === '' && client === turn) {
+
+        boardDefault[row][col] = client === rooms.get('room')[0] ? 'x' : 'o'
+        turn = turn === rooms.get("room")[0] ? rooms.get("room")[1] : rooms.get("room")[0]
+        checkWin(client)
     }
 
 }
 
-const clearBoard =  () => {
+const clearBoard = () => {
 
-    for(let i = 0; i < boardDefault.length; i++){
-        
-        for(let j = 0; j < boardDefault[0].length; j++){
+    for (let i = 0; i < boardDefault.length; i++) {
+
+        for (let j = 0; j < boardDefault[0].length; j++) {
 
             boardDefault[i][j] = ''
         }
@@ -46,20 +84,22 @@ const io = new Server(server, {
 
 io.on("connect", (socket) => {
 
-    io.to(socket.id).emit("join", users.has("room") ? users.get("room"): false )
+    io.to(socket.id).emit("join", rooms.has("room") ? rooms.get("room") : false)
 
 
     socket.on("connect", (data) => {
-        console.log(`${socket.id} has connected ${users.has("room")}`);
-        
+        console.log(`${socket.id} has connected ${rooms.has("room")}`);
+
     })
 
     socket.on("move_made", (move) => {
 
 
         updateBoard(move.row, move.col, socket.id)
-
         io.in("room").emit("update_board", [...boardDefault])
+        io.in("room").emit("update_turn", turn)
+        winner !== false && io.in("room").emit("win", {"winner": winner, "player": socket.id})
+        console.log(boardDefault);
 
 
     })
@@ -67,41 +107,43 @@ io.on("connect", (socket) => {
     socket.on("create_room", (room) => {
 
         clearBoard()
+        winner = false
 
-        if (users.has(room) === true) {
+        if (rooms.has(room) === true) {
 
-            if (users.get(room).length >= 2) {
+            if (rooms.get(room).length >= 2) {
 
 
-            }
-            else {
+            } else {
 
                 socket.join(room)
-                console.log(users)
-                users.set(room, [...io.sockets.adapter.rooms.get(room)])
-                io.in("room").emit("join_room", users.get("room") )
-                console.log(`${socket.id} has 1joined ${room}`);
+                console.log(rooms)
+                rooms.set(room, [...io.sockets.adapter.rooms.get(room)])
+                io.in("room").emit("join_room", rooms.get("room"))
+                console.log(`${socket.id} has 1joined ${room}`)
+                setupGame()
+                io.in("room").emit("update_turn", turn)
             }
-        }
-        else {
+        } else {
             socket.join(room)
-            users.set(room, [...io.sockets.adapter.rooms.get(room)])
-            io.to("room").emit("host_room", users.get("room"))
-            io.emit("join", users.get("room"))
+            rooms.set(room, [...io.sockets.adapter.rooms.get(room)])
+            io.to("room").emit("host_room", rooms.get("room"))
+            io.emit("join", rooms.get("room"))
             console.log(`${socket.id} 2has joined ${room}`)
         }
-        console.log(users,"sdsd")
+        console.log(rooms, "sdsd")
 
     })
 
     socket.on("disconnect", (reason) => {
         clearBoard()
+        rooms.has("room") && setupGame()
         io.emit("update_board", [...boardDefault])
         console.log(`${socket.id} has left`);
-        console.log(users, "users")
-        users.has("room") && users.get("room").includes(socket.id) && ( users.get("room").length > 1 ? users.set("room", [...io.sockets.adapter.rooms.get("room")]) : users.delete("room") )
-        console.log(users)
-        io.emit("exit", users.has("room") ? users.get("room") : false)
+        console.log(rooms, "rooms")
+        rooms.has("room") && rooms.get("room").includes(socket.id) && (rooms.get("room").length > 1 ? rooms.set("room", [...io.sockets.adapter.rooms.get("room")]) : rooms.delete("room"))
+        console.log(rooms)
+        io.emit("exit", rooms.has("room") ? rooms.get("room") : false)
     });
 
 })
