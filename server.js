@@ -75,12 +75,13 @@ const clearBoard = () => {
 
 const io = new Server(server, {
 
-    cors: {
+    // cors: {
 
-        origin: "http://localhost:3000",
-        methods: ["GET", "POST"],
-    },
-})
+    //     origin: "http://localhost:3000",
+    //     methods: ["GET", "POST"],
+    // },
+}
+)
 
 io.on("connect", (socket) => {
 
@@ -151,4 +152,4 @@ io.on("connect", (socket) => {
 
 
 
-server.listen(process.env.PORT || 3001, () => console.log("server is running! http://localhost:3001"))
+server.listen(process.env.PORT || 3001, () => console.log("server is running!", process.env.PORT))
