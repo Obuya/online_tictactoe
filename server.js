@@ -77,7 +77,7 @@ const io = new Server(server, {
 
     cors: {
 
-        origin: "http://localhost:3000",
+        origin: "http://obuyatictactoe.herokuapp.com",
         methods: ["GET", "POST"],
     },
 }
