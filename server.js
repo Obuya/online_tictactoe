@@ -77,7 +77,7 @@ const io = new Server(server, {
 
     cors: {
 
-        origin: "http://obuyatictactoe.herokuapp.com",
+        origin: `http://obuyatictactoe.herokuapp.com:${process.env.PORT}`,
         methods: ["GET", "POST"],
     },
 }
