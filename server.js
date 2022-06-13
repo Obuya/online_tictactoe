@@ -101,6 +101,7 @@ io.on("connect", (socket) => {
         // check if winner has been flaged then emit back to players if they won or lost
         // if won clear the board as well to start a new game
         if(rooms.get("room").winner !== false){
+            io.in("room").emit("update_game", {"winner":rooms.get("room").winner, "board": [...rooms.get("room").board], "turn" :rooms.get("room").turn})
             io.in("room").emit("win", {"winner": winner, "player": socket.id}) 
             clearBoard() 
             console.log(...boardDefault)
