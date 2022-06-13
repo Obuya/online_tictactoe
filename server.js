@@ -91,10 +91,9 @@ io.on("connect", (socket) => {
 
 
     //on every socket connecttion log who has joined
-    socket.on("connect", (data) => {
-        console.log(`${socket.id} has connected!`);
+    // socket.on("connect", (data) => {
 
-    })
+    // })
     socket.on("move_made", (move) => {
         // update Board data and check for win 
         updateBoard(move.row, move.col, socket.id)
@@ -104,7 +103,6 @@ io.on("connect", (socket) => {
             io.in("room").emit("update_game", {"winner":rooms.get("room").winner, "board": [...rooms.get("room").board], "turn" :rooms.get("room").turn})
             io.in("room").emit("win", {"winner": winner, "player": socket.id}) 
             clearBoard() 
-            console.log(...boardDefault)
         } 
         //emit updated turn back to cleints
         io.in("room").emit("update_game", {"winner":rooms.get("room").winner, "board": [...rooms.get("room").board], "turn" :rooms.get("room").turn})

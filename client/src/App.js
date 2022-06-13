@@ -25,8 +25,6 @@ function App() {
     useEffect(() => {
 
       socket.on("win", (data)=>{
-
-        console.log(data.player, "made it here");
         setWinner(data.winner)
         alert(`${socket.id === data.winner ? "You Won!!!!" : "You Lost :(("}`)
   
@@ -38,8 +36,6 @@ function App() {
     }) 
 
     socket.on("update_game", (data) => {
-
-       console.log("made it here after win");
         setBoard(data.board)
         setTurn(socket.id === data.turn ? true: false )
         setWinner(data.winner)
@@ -55,7 +51,6 @@ function App() {
     })
     
     socket.on("created_room", (data) => {
-      console.log(data);
       setPlayers(data)
       setName(() => data[0])
     })
@@ -73,20 +68,6 @@ function App() {
     // })
 
   },[socket])
-
-  // useEffect(() => {
-
-
-  // }, [players])
-
-  // useEffect(() => {
-   
-
-
-  // }, [name])
-
-
-
 
   const joinRoom = () => {
     players == 0 ? socket.emit("create_room", "room") : socket.emit("join_room", "room")
