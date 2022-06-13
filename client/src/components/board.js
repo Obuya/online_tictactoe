@@ -3,23 +3,6 @@ import Square from "./square"
 
 const Board = (props) => {
 
-    // const ROWS = 3
-    // const COLM = 3
-    const boardStart  = [
-        ['', '', ''], 
-        ['', '', ''] , 
-        ['', '', '']
-    ]
-    const [board, setBoard] = useState(boardStart)
-
-    useEffect(() => {
-
-        props.socket.on("update_board", (board) => {
-            
-            setBoard(() => [...board])
-        })
-    }, [props.socket])
-
     // update board and validate winner in the server- send back board from server
     const handleClick = (row, col) => {
 
@@ -33,7 +16,7 @@ const Board = (props) => {
         <div className="board">
 
             {
-                board.map( (rows,rIndex) => (
+                props.board.map( (rows,rIndex) => (
                     
                     rows.map((col,cIndex) => (
                         <Square 

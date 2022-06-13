@@ -7,7 +7,9 @@ import {
   useState
 } from 'react'
 
-const socket = io.connect("https://obuyatictactoe.herokuapp.com")
+//server
+// "https://obuyatictactoe.herokuapp.com"
+const socket = io.connect("http://localhost:3001")
 
 
 
@@ -15,74 +17,79 @@ const socket = io.connect("https://obuyatictactoe.herokuapp.com")
 function App() {
   const [name, setName] = useState("")
   const [oppName, setOppName] = useState("")
-  const [roomExists, setRoomExists] = useState(false)
-  const [players, setPlayers] = useState(0)
+  const [players, setPlayers] = useState([])
   const [turn, setTurn] = useState(null)
   const [winner, setWinner] = useState(false)
+  const [board, setBoard] = useState(null)
 
     useEffect(() => {
 
-    socket.on("update_turn", (data) => {
+      socket.on("win", (data)=>{
 
-        setTurn(() => socket.id === data ? true: false )
+        console.log(data.player, "made it here");
+        setWinner(data.winner)
+        alert(`${socket.id === data.winner ? "You Won!!!!" : "You Lost :(("}`)
+  
+      })
+    socket.on("connected", (data) => {
+
+      setName(socket.id)
+      setPlayers(data)
+    }) 
+
+    socket.on("update_game", (data) => {
+
+       console.log("made it here after win");
+        setBoard(data.board)
+        setTurn(socket.id === data.turn ? true: false )
+        setWinner(data.winner)
       
     })
+    socket.on("joined_room", (data) => {
 
-    socket.on("join", (data) => {
-
-      setName(() => socket.id)
-      if (data !== false) {
-        setRoomExists(() => true)
-        console.log(data)
-      } else {
-        setRoomExists(() => false)
-      }
-    })
-
-    socket.on("exit", (data) => {
-
-      if (data !== false) {
-        setRoomExists(() => false)
-        setPlayers(() => data.length)
-      } else {
-        setRoomExists(() => false)
-        setPlayers(() => 0)
-      }
+      setPlayers(data.players)
+      setOppName(data.players[0] === socket.id ? data.players[1] : data.players[0] ) 
+      setBoard(data.board)
+      setTurn(socket.id === data.turn ? true: false )
 
     })
-
-    socket.on("host_room", (data) => {
-      setPlayers(() => data.length)
-      name === data[0] ? setOppName(() => data[1]) : setOppName(() => data[0])
-
+    
+    socket.on("created_room", (data) => {
       console.log(data);
+      setPlayers(data)
+      setName(() => data[0])
     })
 
-    socket.on("join_room", (data) => {
+    // socket.on("exit", (data) => {
 
-      setPlayers(() => data.length)
-      name === data[0] ? setOppName(() => data[1]) : setOppName(() => data[0])
-    })
+    //   if (data !== false) {
+    //     setRoomExists(() => false)
+    //     setPlayers(() => data.length)
+    //   } else {
+    //     setRoomExists(() => false)
+    //     setPlayers(() => 0)
+    //   }
+
+    // })
+
   },[socket])
 
-  useEffect(() => {
-    socket.on("win", (data)=>{
-
-      console.log(name, "made it here");
-      setWinner(() => data.winner)
-      name && alert(`${name === data.winner ? "You Won!!!!" : "You Lost :(("}`)
-
-    })
+  // useEffect(() => {
 
 
-  }, [name])
+  // }, [players])
+
+  // useEffect(() => {
+   
+
+
+  // }, [name])
 
 
 
 
   const joinRoom = () => {
-    socket.emit("create_room", "room")
-    console.log(players);
+    players == 0 ? socket.emit("create_room", "room") : socket.emit("join_room", "room")
   }
 
 
@@ -92,13 +99,13 @@ function App() {
       <h4 className='player'>i am: {name}</h4>
       {
         // render game board only when there are 2 players connected
-      (players === 2) ? 
+      (players.length === 2) ? 
       <>
       <h4 className='turn'>{turn ? "Your": "Opp's"} Turn</h4>
-      <Board socket = {socket} winner = {winner}/> 
+      <Board socket = {socket} winner = {winner} board = {board}/> 
       <h4 className='opp'>playing against: {oppName}</h4>
       </> 
-        : players === 1 ? <h4>waiting for opp....</h4> : <button onClick={joinRoom}>{roomExists ? "Join" : "Start"} Game</button>
+        : players.length === 1 && players.includes(name)  ?  <h4>waiting for opp....</h4> : <button onClick={joinRoom}>{ players.length === 1 ? "Join" : "Start"} Game</button>
       
       }
     </div>
