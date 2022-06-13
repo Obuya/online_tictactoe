@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react"
 import Square from "./square"
 
 const Board = (props) => {
